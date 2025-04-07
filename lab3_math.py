@@ -60,7 +60,7 @@ functions = {
         "3": ("f(x) = exp(x)", lambda x: math.exp(x)),
         "4": ("f(x) = 1/sqrt(x-1)", lambda x: 1/math.sqrt(x-1)),
         "5": ("f(x) = 1/(3-x)", lambda x: 1/(3-x)),
-        "6": ("f(x) = 1/sqrt(x)", lambda x: math.log(x)/math.sqrt(x-1)**3)
+        "6": ("f(x) = 1/x", lambda x: 1/(x-2))
     }
 
 methods = {
@@ -82,6 +82,13 @@ def parse_float(user_input):
 def find_discontinuities(f, a, b, samples=1000, threshold=1e8):
     disc = []
     dx = (b - a) / samples
+    for x in range (math.ceil(a), int(b)):
+        try:
+            y = f(x)
+            if math.isnan(y) or math.isinf(y) or abs(y) > threshold:
+                disc.append(x)
+        except Exception:
+            disc.append(x)
     for i in range(samples + 1):
         x = a + i * dx
         try:
@@ -147,7 +154,6 @@ def main():
             continue
         disc = find_discontinuities(f, a, b)
         if not disc:
-            print("Точек разрыва не обнаружено.")
             print("Выберите метод интегрирования:")
             for key, (desc, _, _) in methods.items():
                 print(f"  {key}: {desc}")
@@ -168,32 +174,45 @@ def main():
             print(f"Число разбиений для достижения точности: {n_final}")
         else:
             print("Найдены предполагаемые точки разрыва")
-            cov = False
-            eps = 0.0001
-            for d in disc:
-                left, right = try_to_compute(f, d-eps), try_to_compute(f, d+eps)
-                if a == d:
-                    left = 0
-                if b == d:
-                    right = 0
-                if left is None or right is None:
-                    cov = True
-                    break
-            if cov:
-                print("Интеграл расходится")
-            else:
-                if not a in disc:
-                    disc.append(a-eps)
-                if not b in disc:
-                    disc.append(b+eps)
-                disc.sort()
+            if len(disc) == 1 and any(f(disc[0] - i / 1000) == -f(disc[0] + i / 1000) for i in
+                                      range(1, int(min(disc[0] - a, b - disc[0]) * 1000))):
+                print("Пасхалочка))))")
+                l = disc[0]
+                if l - a > b - l:
+                    b = 2 * l - b
+                else:
+                    a = 2 * l - a
                 for method in methods.values():
                     method_desc, method_func, order = method
                     print(f"Метод {method_desc}")
-                    result = 0
-                    for i in range(len(disc)-1):
-                        su, _ = integrate_with_runge(method_func, f, disc[i]+eps, disc[i+1]-eps, tol, order)
-                        result += su
-                    print(f"Вычисленное значение интегралла: {result}")
+                    print(integrate_with_runge(method_func, f, a, b, tol, order))
+            else:
+                cov = False
+                eps = 0.0001
+                for d in disc:
+                    left, right = try_to_compute(f, d-eps), try_to_compute(f, d+eps)
+                    if a == d:
+                        left = 0
+                    if b == d:
+                        right = 0
+                    if left is None or right is None:
+                        cov = True
+                        break
+                if cov:
+                    print("Интеграл расходится")
+                else:
+                    if not a in disc:
+                        disc.append(a-eps)
+                    if not b in disc:
+                        disc.append(b+eps)
+                    disc.sort()
+                    for method in methods.values():
+                        method_desc, method_func, order = method
+                        print(f"Метод {method_desc}")
+                        result = 0
+                        for i in range(len(disc)-1):
+                            su, _ = integrate_with_runge(method_func, f, disc[i]+eps, disc[i+1]-eps, tol, order)
+                            result += su
+                        print(f"Вычисленное значение интегралла: {result}")
 if __name__ == '__main__':
     main()
