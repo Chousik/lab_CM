@@ -38,7 +38,6 @@ def linear_regression(xs, ys):
 
 #коэффициентики
 def poly_regression(xs, ys, degree):
-    n = len(xs)
     A = [[sum((x**(j+k)) for x in xs) for k in range(degree+1)]
          for j in range(degree+1)]
     b = [sum(y * (x**j) for x,y in zip(xs,ys)) for j in range(degree+1)]
@@ -177,7 +176,7 @@ class App(tk.Tk):
                         pts.append((float(row[0]), float(row[1])))
             self.txt.delete("1.0", tk.END)
             for x,y in pts:
-                self.txt.insert(tk.END, f"{x},{y}\n")
+                self.txt.insert(tk.END, f"{x} {y}\n")
         except Exception as e:
             messagebox.showerror("Ошибка", f"Не удалось загрузить CSV:\n{e}")
 
@@ -187,8 +186,8 @@ class App(tk.Tk):
             line = line.strip()
             if not line: continue
             try:
-                x_str,y_str = line.split(",")
-                pts.append((float(x_str), float(y_str)))
+                x_str,y_str = line.split(" ")
+                pts.append((float(x_str.replace(",", ".")), float(y_str.replace(",", "."))))
             except:
                 messagebox.showerror("Ошибка", f"Неверный формат: '{line}'")
                 return
